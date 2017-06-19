@@ -11,11 +11,12 @@ class Plugin
 
     public function __construct()
     {
-        add_filter('pre_set_site_transient_update_plugins', [$this, 'check']);
-        add_filter('plugins_api', [$this, 'pluginDetails'], 10, 3);
         if (defined('GITHUB_CLIENT_ID') && defined('GITHUB_CLIENT_SECRET')) {
             $this->github_auth = '?client_id=' . GITHUB_CLIENT_ID . '&client_secret=' . GITHUB_CLIENT_SECRET;
         }
+        add_filter('pre_set_site_transient_update_plugins', [$this, 'check']);
+        add_filter('plugins_api', [$this, 'pluginDetails'], 10, 3);
+        add_filter('upgrader_source_selection', [$this, 'location'], 10, 4);
     }
 
     public function check($transient)
@@ -41,7 +42,7 @@ class Plugin
         return $transient;
     }
 
-    public function inject()
+    private function inject()
     {
         $pluginData                   = $this->pluginData();
         $this->config['version']      = $pluginData['Version'];
@@ -54,17 +55,19 @@ class Plugin
         $this->config['zip_url']      = trailingslashit($this->config['zip_url']) . $this->config['new_version'];
     }
 
-    public function pluginData()
+    private function pluginData()
     {
         return get_plugin_data(WP_PLUGIN_DIR . '/' . $this->config['plugin_file']);
     }
 
-    public function latest()
+    private function latest()
     {
         $latest = get_site_transient($this->config['slug'] . '_latest_tag');
         if ($this->ignoreTransients() || empty($latest)) {
             $remoteResponse = wp_remote_get(trailingslashit($this->config['api_url']) . $this->config['channel'] . $this->github_auth);
             if (is_wp_error($remoteResponse)) {
+                error_log(print_r($remoteResponse, true));
+
                 return false;
             }
             $releases = json_decode($remoteResponse['body']);
@@ -88,7 +91,7 @@ class Plugin
         return $latest;
     }
 
-    public function ignoreTransients()
+    private function ignoreTransients()
     {
         return (defined('NANGA_UPDATER_FORCE_UPDATE') && NANGA_UPDATER_FORCE_UPDATE);
     }
@@ -117,6 +120,34 @@ class Plugin
         return $details;
     }
 
+    public function location($source, $remote_source, $upgrader, $hook_extra = null)
+    {
+        global $wp_filesystem;
+        $new_source = null;
+        error_log(print_r($upgrader, true));
+        if ($upgrader instanceof \Plugin_Upgrader) {
+            //error_log(print_r($hook_extra, true));
+            //error_log(print_r($_POST, true));
+            if ($_POST['slug'] == $this->config['slug']) {
+                //$new_source = WP_PLUGIN_DIR . '/' . trailingslashit($this->config['proper_folder_name']);
+                $new_source = trailingslashit($remote_source) . $this->config['proper_folder_name'];
+                error_log(print_r($source, true));
+                error_log(print_r($new_source, true));
+                $wp_filesystem->move($upgrader['destination'], $new_source); // Forces 500 Error
+                if ($wp_filesystem->move($source, $new_source, true)) {
+
+                    return trailingslashit($new_source);
+                } else {
+                    error_log(print_r($upgrader, true));
+
+                    return new \WP_Error();
+                }
+            }
+        }
+
+        return $source;
+    }
+
     private function date()
     {
         $remoteData = $this->remoteData();
@@ -133,6 +164,8 @@ class Plugin
             if ($this->ignoreTransients() || ( ! isset($remoteData) || ! $remoteData || '' == $remoteData)) {
                 $remoteData = wp_remote_get($this->config['api_url'] . $this->github_auth);
                 if (is_wp_error($remoteData)) {
+                    error_log(print_r($remoteData, true));
+
                     return false;
                 }
                 $remoteData = json_decode($remoteData['body']);
