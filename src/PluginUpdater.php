@@ -24,6 +24,9 @@ class PluginUpdater
     {
         $plugins = apply_filters('nanga_updater_exclude_plugins', self::$plugins);
         foreach ($plugins as $pluginName => $pluginClass) {
+            if ( ! class_exists($pluginClass)) {
+                continue;
+            }
             new $pluginClass();
         }
     }

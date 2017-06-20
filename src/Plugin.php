@@ -25,6 +25,9 @@ class Plugin
             return $transient;
         }
         delete_site_transient($this->config['slug'] . '_latest_tag');
+        if ( ! file_exists(WP_PLUGIN_DIR . '/' . $this->config['plugin_file'])) {
+            return $transient;
+        }
         $this->inject();
         $update = version_compare($this->config['new_version'], $this->config['version'], '>');
         if ($update) {
@@ -123,21 +126,20 @@ class Plugin
     public function location($source, $remote_source, $upgrader, $hook_extra = null)
     {
         global $wp_filesystem;
-        error_log(print_r($upgrader, true));
+        //error_log(print_r($upgrader, true));
         if ($upgrader instanceof \Plugin_Upgrader) {
             //error_log(print_r($hook_extra, true));
             //error_log(print_r($_POST, true));
             if ($_POST['slug'] == $this->config['slug']) {
                 //$new_source = WP_PLUGIN_DIR . '/' . trailingslashit($this->config['proper_folder_name']);
                 $new_source = trailingslashit($remote_source) . $this->config['proper_folder_name'];
-                error_log(print_r($source, true));
-                error_log(print_r($new_source, true));
+                //error_log(print_r($source, true));
+                //error_log(print_r($new_source, true));
                 //$wp_filesystem->move($upgrader['destination'], $new_source); // Forces 500 Error
                 if ($wp_filesystem->move($source, $new_source, true)) {
-
                     return trailingslashit($new_source);
                 } else {
-                    error_log(print_r($upgrader, true));
+                    //error_log(print_r($upgrader, true));
 
                     return new \WP_Error();
                 }
