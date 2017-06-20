@@ -17,3 +17,4 @@ register_activation_hook(__FILE__, ['\Nanga\PluginUpdater', 'activate']);
 register_deactivation_hook(__FILE__, ['\Nanga\PluginUpdater', 'deactivate']);
 
 \Nanga\PluginUpdater::init();
+\Nanga\PluginUpdater::auto();

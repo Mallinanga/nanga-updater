@@ -123,7 +123,6 @@ class Plugin
     public function location($source, $remote_source, $upgrader, $hook_extra = null)
     {
         global $wp_filesystem;
-        $new_source = null;
         error_log(print_r($upgrader, true));
         if ($upgrader instanceof \Plugin_Upgrader) {
             //error_log(print_r($hook_extra, true));
@@ -133,7 +132,7 @@ class Plugin
                 $new_source = trailingslashit($remote_source) . $this->config['proper_folder_name'];
                 error_log(print_r($source, true));
                 error_log(print_r($new_source, true));
-                $wp_filesystem->move($upgrader['destination'], $new_source); // Forces 500 Error
+                //$wp_filesystem->move($upgrader['destination'], $new_source); // Forces 500 Error
                 if ($wp_filesystem->move($source, $new_source, true)) {
 
                     return trailingslashit($new_source);
