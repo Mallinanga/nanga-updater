@@ -4,12 +4,12 @@
  * Author: VG web things
  * Description: VG web things Updater.
  * Plugin Name: VG web things Updater
- * Version: 1.1.0
+ * Version: 1.2.0
  */
 if ( ! defined('ABSPATH')) {
     exit;
 }
-define('NANGA_UPDATER_VERSION', '1.1.0');
+define('NANGA_UPDATER_VERSION', '1.2.0');
 
 require_once(dirname(__FILE__) . '/vendor/autoload.php');
 
