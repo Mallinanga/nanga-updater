@@ -2,8 +2,6 @@
 
 namespace Nanga\Plugins;
 
-use Nanga\Plugin;
-
 class Deployer extends Plugin
 {
 

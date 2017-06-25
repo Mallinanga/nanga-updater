@@ -2,8 +2,6 @@
 
 namespace Nanga\Plugins;
 
-use Nanga\Plugin;
-
 class Newsletter extends Plugin
 {
 

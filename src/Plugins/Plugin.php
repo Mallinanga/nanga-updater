@@ -1,6 +1,6 @@
 <?php
 
-namespace Nanga;
+namespace Nanga\Plugins;
 
 class Plugin
 {
@@ -15,19 +15,19 @@ class Plugin
             $this->github_auth = '?client_id=' . GITHUB_CLIENT_ID . '&client_secret=' . GITHUB_CLIENT_SECRET;
         }
         add_filter('pre_set_site_transient_update_plugins', [$this, 'check']);
-        add_filter('plugins_api', [$this, 'pluginDetails'], 10, 3);
+        add_filter('plugins_api', [$this, 'details'], 10, 3);
         add_filter('upgrader_source_selection', [$this, 'location'], 10, 4);
     }
 
     public function check($transient)
     {
-        error_log('--- ' . __FUNCTION__ . ' ' . $this->config['slug']);
         if ( ! file_exists(WP_PLUGIN_DIR . '/' . $this->config['plugin_file'])) {
             return $transient;
         }
         if (empty($transient->checked)) {
             return $transient;
         }
+        // error_log('--- ' . __FUNCTION__ . ' ' . $this->config['slug']);
         // delete_site_transient($this->config['slug'] . '_latest_tag');
         $this->inject();
         $update = version_compare($this->config['new_version'], $this->config['version'], '>');
@@ -48,20 +48,36 @@ class Plugin
 
     private function inject()
     {
-        $pluginData                   = $this->pluginData();
+        $this->github();
+        $pluginData                   = get_plugin_data(WP_PLUGIN_DIR . '/' . $this->config['plugin_file']);
         $this->config['version']      = $pluginData['Version'];
         $this->config['new_version']  = $this->latest();
-        $this->config['last_updated'] = date('Y-m-d');
+        $this->config['last_updated'] = $this->updated();
         $this->config['plugin_name']  = $pluginData['Name'];
-        $this->config['description']  = $pluginData['Description'];
+        $this->config['description']  = $this->changelog();
         $this->config['author']       = $pluginData['Author'];
         $this->config['homepage']     = $this->config['github_url'];
         $this->config['zip_url']      = trailingslashit($this->config['zip_url']) . $this->config['new_version'];
     }
 
-    private function pluginData()
+    private function github()
     {
-        return get_plugin_data(WP_PLUGIN_DIR . '/' . $this->config['plugin_file']);
+        if ( ! empty($this->github_data)) {
+            return $this->github_data;
+        }
+        // error_log('--- ' . __FUNCTION__ . ' ' . $this->config['slug']);
+        $transient = get_site_transient($this->config['slug'] . '_github_data');
+        if ($this->force() || ( ! isset($transient) || ! $transient || '' == $transient)) {
+            $request = wp_remote_get($this->config['api_url'] . $this->github_auth);
+            if (is_wp_error($request)) {
+                return false;
+            }
+            $data = json_decode($request['body']);
+            set_site_transient($this->config['slug'] . '_github_data', $data, WEEK_IN_SECONDS);
+        }
+        $this->github_data = $transient;
+
+        return $this->github_data;
     }
 
     private function latest()
@@ -86,11 +102,25 @@ class Plugin
                 }
             }
             if ( ! empty($latest)) {
-                set_site_transient($this->config['slug'] . '_latest_tag', $latest, HOUR_IN_SECONDS / 2);
+                set_site_transient($this->config['slug'] . '_latest_tag', $latest, WEEK_IN_SECONDS);
             }
         }
 
         return $latest;
+    }
+
+    private function updated()
+    {
+        $github = $this->github();
+
+        return ! empty($github->updated_at) ? date('Y-m-d', strtotime($github->updated_at)) : false;
+    }
+
+    private function changelog()
+    {
+        $github = $this->github();
+
+        return ! empty($github->description) ? $github->description : 'CHANGELOG not available.';
     }
 
     private function force()
@@ -98,41 +128,11 @@ class Plugin
         return (defined('NANGA_UPDATER_FORCE_UPDATE') && NANGA_UPDATER_FORCE_UPDATE);
     }
 
-    public function pluginDetails($false, $action, $details)
-    {
-        error_log('--- ' . __FUNCTION__);
-        if (isset($details->slug) && $details->slug === $this->config['slug']) {
-            error_log(print_r($this->config['slug'], true));
-            $this->inject();
-            //$details->requires    = get_bloginfo('version');
-            $details->slug          = $this->config['slug'];
-            $details->plugin        = $this->config['slug'];
-            $details->name          = $this->config['plugin_name'];
-            $details->plugin_name   = $this->config['plugin_name'];
-            $details->version       = $this->config['new_version'];
-            $details->author        = $this->config['author'];
-            $details->homepage      = $this->config['homepage'];
-            $details->tested        = get_bloginfo('version');
-            $details->last_updated  = $this->config['last_updated'];
-            $details->sections      = [
-                'description' => $this->config['description'],
-                'changelog'   => $this->config['description'],
-            ];
-            $details->download_link = $this->config['zip_url'];
-
-            return $details;
-        }
-
-        return $false;
-    }
-
     public function location($source, $remote_source, $upgrader, $hook_extra = null)
     {
         global $wp_filesystem;
-        //error_log(print_r($upgrader, true));
         if ($upgrader instanceof \Plugin_Upgrader) {
-            //error_log(print_r($_REQUEST, true));
-            if ($_POST['slug'] == $this->config['slug']) {
+            if (isset($_REQUEST['slug']) && $_REQUEST['slug'] == $this->config['slug']) {
                 $new_source = trailingslashit($remote_source) . $this->config['proper_folder_name'];
                 //$wp_filesystem->move($upgrader['destination'], $new_source); // Forces 500 Error
                 if ($wp_filesystem->move($source, $new_source, true)) {
@@ -146,39 +146,28 @@ class Plugin
         return $source;
     }
 
-    private function date()
+    public function details($false, $action, $details)
     {
-        $remoteData = $this->remoteData();
+        if (isset($details->slug) && $details->slug === $this->config['slug']) {
+            $this->inject();
+            $details->slug          = $this->config['slug'];
+            $details->plugin        = $this->config['slug'];
+            $details->name          = $this->config['plugin_name'];
+            $details->plugin_name   = $this->config['plugin_name'];
+            $details->version       = $this->config['new_version'];
+            $details->author        = $this->config['author'];
+            $details->homepage      = $this->config['homepage'];
+            $details->tested        = get_bloginfo('version');
+            $details->last_updated  = $this->config['last_updated'];
+            $details->sections      = [
+                'description' => $this->config['description'],
+                'changelog'   => $this->changelog(),
+            ];
+            $details->download_link = $this->config['zip_url'];
 
-        return ! empty($remoteData->updated_at) ? date('Y-m-d', strtotime($remoteData->updated_at)) : false;
-    }
-
-    private function remoteData()
-    {
-        if ( ! empty($this->github_data)) {
-            $remoteData = $this->github_data;
-        } else {
-            $remoteData = get_site_transient($this->config['slug'] . '_github_data');
-            if ($this->force() || ( ! isset($remoteData) || ! $remoteData || '' == $remoteData)) {
-                $remoteData = wp_remote_get($this->config['api_url'] . $this->github_auth);
-                if (is_wp_error($remoteData)) {
-                    error_log(print_r($remoteData, true));
-
-                    return false;
-                }
-                $remoteData = json_decode($remoteData['body']);
-                set_site_transient($this->config['slug'] . '_github_data', $remoteData, WEEK_IN_SECONDS);
-            }
-            $this->github_data = $remoteData;
+            return $details;
         }
 
-        return $remoteData;
-    }
-
-    private function description()
-    {
-        $remoteData = $this->remoteData();
-
-        return ! empty($remoteData->description) ? $remoteData->description : false;
+        return $false;
     }
 }

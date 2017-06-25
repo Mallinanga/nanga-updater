@@ -6,8 +6,6 @@ class PluginUpdater
 {
 
     protected static $plugins;
-    protected static $allowed;
-    protected static $disallowed;
 
     public static function init()
     {
@@ -20,12 +18,12 @@ class PluginUpdater
             'nanga-notifications' => __NAMESPACE__ . '\Plugins\Notifications',
             'nanga-plugin-test'   => __NAMESPACE__ . '\Plugins\Test',
             'nanga-updater'       => __NAMESPACE__ . '\Plugins\Updater',
-            'woocommerce'         => __NAMESPACE__ . '\Plugins\WooCommerce',
+            //'woocommerce'       => __NAMESPACE__ . '\Plugins\WooCommerce',
         ];
         add_action('admin_init', [self::class, 'plugins']);
         add_filter('plugin_action_links_nanga-updater/nanga-updater.php', [self::class, 'links']);
-        add_action('admin_bar_menu', [self::class, 'nodes'], 100);
-        add_action('admin_init', [self::class, 'actions'], 1);
+        add_action('admin_bar_menu', [self::class, 'nodes'], 120);
+        add_action('admin_init', [self::class, 'actions']);
         add_action('admin_notices', [self::class, 'notices']);
         add_action('nanga_settings_tab_content_updates', [self::class, 'settings']);
     }
@@ -43,26 +41,6 @@ class PluginUpdater
 
     public static function auto()
     {
-        self::$allowed    = [
-            'acf-gallery',
-            'acf-options-page',
-            'acf-repeater',
-            'advanced-custom-fields',
-            'advanced-custom-fields-pro',
-            'akismet',
-            'codepress-admin-columns',
-            'gravityforms',
-            'imsanity',
-            'jigsaw',
-            'post-types-order',
-            'user-role-editor',
-            'wordpress-seo',
-        ];
-        self::$disallowed = [
-            'nanga',
-        ];
-        $allowed          = apply_filters('nanga_updater_auto_allowed_plugins', self::$allowed);
-        $disallowed       = apply_filters('nanga_updater_auto_disallowed_plugins', self::$disallowed);
         if (defined('WP_ENV') && 'development' === WP_ENV) {
             add_filter('automatic_updates_is_vcs_checkout', '__return_false', 1);
         }
@@ -80,6 +58,32 @@ class PluginUpdater
             return $update;
         }, 20, 2);
         add_filter('auto_update_plugin', function ($update, $item) {
+            $allowed    = apply_filters('nanga_updater_auto_allowed_plugins', [
+                'acf-gallery',
+                'acf-options-page',
+                'acf-repeater',
+                'advanced-custom-fields',
+                'advanced-custom-fields-pro',
+                'akismet',
+                'codepress-admin-columns',
+                'gravityforms',
+                'imsanity',
+                'jigsaw',
+                'post-types-order',
+                'user-role-editor',
+                'wordpress-seo',
+            ]);
+            $disallowed = apply_filters('nanga_updater_auto_disallowed_plugins', [
+                'nanga',
+            ]);
+            /*
+            if (in_array($item->slug, $allowed)) {
+                return true;
+            }
+            if (in_array($item->slug, $disallowed)) {
+                return false;
+            }
+            */
             error_log(print_r($update, true));
             error_log(print_r($item, true));
 
@@ -88,17 +92,11 @@ class PluginUpdater
         /*
         if (defined('NANGA_PLAYGROUND') && NANGA_PLAYGROUND) {
             add_filter('auto_update_plugin', function ($update, $item) {
-                if (in_array($item->slug, self::$disallowed_plugins)) {
-                    return false;
-                }
 
                 return true;
             }, 20, 2);
         } else {
             add_filter('auto_update_plugin', function ($update, $item) {
-                if (in_array($item->slug, self::$allowed_plugins)) {
-                    return true;
-                }
 
                 return false;
             }, 20, 2);
@@ -125,45 +123,110 @@ class PluginUpdater
             'title' => 'Updates',
         ]);
         $wp_admin_bar->add_node([
-            'href'   => wp_nonce_url(admin_url()),
-            'id'     => 'nanga-updates__clean-cache',
+            'href'   => admin_url('plugins.php?plugin_status=upgrade'),
+            'id'     => 'nanga-updates__plugins',
             'parent' => 'nanga-updates',
-            'title'  => 'Clean Update Cache',
+            'title'  => 'Outdated Plugins',
         ]);
         $wp_admin_bar->add_node([
-            'href'   => wp_nonce_url(admin_url()),
-            'id'     => 'nanga-updates__force',
+            'href'   => wp_nonce_url(add_query_arg('action', 'nanga-updates__flush-cache', admin_url('index.php'))),
+            'id'     => 'nanga-updates__flush-cache',
+            'parent' => 'nanga-updates',
+            'title'  => 'Flush Update Cache',
+        ]);
+        $wp_admin_bar->add_node([
+            'href'   => wp_nonce_url(add_query_arg('action', 'nanga-updates__flush-transients', admin_url('index.php'))),
+            'id'     => 'nanga-updates__flush-transients',
+            'parent' => 'nanga-updates',
+            'title'  => 'Flush Plugin Updater Transients',
+        ]);
+        $wp_admin_bar->add_node([
+            'href'   => wp_nonce_url(add_query_arg('action', 'nanga-updates__force-autoupdate', admin_url('index.php'))),
+            'id'     => 'nanga-updates__force-autoupdate',
             'parent' => 'nanga-updates',
             'title'  => 'Force Updates',
-        ]);
-        $wp_admin_bar->add_node([
-            'href'   => wp_nonce_url(admin_url()),
-            'id'     => 'nanga-updates__autoupdate',
-            'parent' => 'nanga-updates',
-            'title'  => 'Maybe Autoupdate',
         ]);
     }
 
     public static function actions()
     {
-        /*
+        global $pagenow;
+        if ('index.php' !== $pagenow) {
+            return;
+        }
+        if (isset($_GET['action']) && 'nanga-updates__flush-cache' === $_GET['action'] && isset($_GET['_wpnonce']) && wp_verify_nonce($_GET['_wpnonce']) && ! doing_action('admin_action_nanga-updates__flush-cache')) {
+            add_action('admin_action_nanga-updates__flush-cache', [self::class, 'actionFlushCache']);
+        }
+        if (isset($_GET['action']) && 'nanga-updates__flush-transients' === $_GET['action'] && isset($_GET['_wpnonce']) && wp_verify_nonce($_GET['_wpnonce']) && ! doing_action('admin_action_nanga-updates__flush-transients')) {
+            add_action('admin_action_nanga-updates__flush-transients', [self::class, 'actionFlushTransients']);
+        }
+        if (isset($_GET['action']) && 'nanga-updates__force-autoupdate' === $_GET['action'] && isset($_GET['_wpnonce']) && wp_verify_nonce($_GET['_wpnonce']) && ! doing_action('admin_action_nanga-updates__force-autoupdate')) {
+            add_action('admin_action_nanga-updates__force-autoupdate', [self::class, 'actionForceUpdates']);
+        }
+    }
+
+    public static function actionFlushCache()
+    {
         wp_clean_update_cache();
+    }
+
+    public static function actionFlushTransients()
+    {
+        foreach (self::$plugins as $pluginName => $pluginClass) {
+            delete_site_transient($pluginName . '_github_data');
+            delete_site_transient($pluginName . '_latest_tag');
+        }
+    }
+
+    public static function actionForceUpdates()
+    {
         if ( ! doing_action('wp_maybe_auto_update')) {
             // do_action('wp_maybe_auto_update');
             wp_maybe_auto_update();
         }
-        */
     }
 
     public static function notices()
     {
-        echo '<div class="notice notice-success is-dismissible"><p>This is an admin notice.</p></div>';
+        /*
+        if (isset($_GET['action']) && 'nanga-updates__flush-cache' === $_GET['action']) {
+            echo '<div class="notice notice-success is-dismissible"><p>Update cache has been successfully flushed.</p></div>';
+        }
+        */
+        if (did_action('admin_action_nanga-updates__flush-cache')) {
+            echo '<div class="notice notice-success is-dismissible"><p>Update cache has been successfully flushed.</p></div>';
+        }
+        if (doing_action('admin_action_nanga-updates__flush-cache')) {
+            echo '<div class="notice notice-warning"><p>Update cache is being currently flushed.</p></div>';
+        }
+        /*
+        if (isset($_GET['action']) && 'nanga-updates__flush-transients' === $_GET['action']) {
+            // echo '<div class="notice notice-success is-dismissible"><p>Transients of latest tags have been successfully flushed.</p></div>';
+        }
+        */
+        if (did_action('admin_action_nanga-updates__flush-transients')) {
+            echo '<div class="notice notice-success is-dismissible"><p>Transients of latest tags have been successfully flushed.</p></div>';
+        }
+        if (doing_action('admin_action_nanga-updates__flush-transients')) {
+            echo '<div class="notice notice-warning"><p>Transients of latest tags are being currently flushed.</p></div>';
+        }
+        /*
+        if (isset($_GET['action']) && 'nanga-updates__force-autoupdate' === $_GET['action']) {
+            // echo '<div class="notice notice-success is-dismissible"><p>Forcing automatic updates has been triggered successfully.</p></div>';
+        }
+        */
+        if (did_action('admin_action_nanga-updates__force-autoupdate')) {
+            echo '<div class="notice notice-success is-dismissible"><p>Forcing automatic updates has been triggered successfully.</p></div>';
+        }
+        if (doing_action('admin_action_nanga-updates__force-autoupdate')) {
+            echo '<div class="notice notice-warning"><p>Forcing automatic updates is currently running.</p></div>';
+        }
     }
 
     public static function settings()
     {
         echo '<h2>VG web things Plugin Updater</h2>';
-        echo '<p>The following plugins are updated via VG web things Updater plugin.</p>';
+        echo '<p>The following plugins are updated via <strong>VG web things Updater</strong> plugin.</p>';
         echo '<ul>';
         foreach (self::$plugins as $pluginName => $pluginClass) {
             echo '<li>' . $pluginName . '</li>';

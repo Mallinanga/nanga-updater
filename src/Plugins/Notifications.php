@@ -2,8 +2,6 @@
 
 namespace Nanga\Plugins;
 
-use Nanga\Plugin;
-
 class Notifications extends Plugin
 {
 
