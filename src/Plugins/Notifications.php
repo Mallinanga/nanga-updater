@@ -11,7 +11,7 @@ class Notifications extends Plugin
     {
         $this->config = [
             'api_url'            => 'https://api.github.com/repos/Mallinanga/nanga-notifications',
-            'channel'            => 'tags',
+            'channel'            => apply_filters('nanga_updater_nanga-notifications_channel', 'tags'),
             'github_url'         => 'https://github.com/Mallinanga/nanga-notifications',
             'plugin_file'        => 'nanga-notifications/nanga-notifications.php',
             'proper_folder_name' => 'nanga-notifications',

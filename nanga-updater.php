@@ -4,12 +4,12 @@
  * Author: Panos Paganis
  * Description: VG web things Updater.
  * Plugin Name: VG web things Updater
- * Version: 1.3.0
+ * Version: 1.3.1
  */
 
 defined('WPINC') || die;
 
-define('NANGA_UPDATER_VERSION', '1.3.0');
+define('NANGA_UPDATER_VERSION', '1.3.1');
 
 require_once(dirname(__FILE__) . '/vendor/autoload.php');
 

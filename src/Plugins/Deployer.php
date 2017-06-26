@@ -11,7 +11,7 @@ class Deployer extends Plugin
     {
         $this->config = [
             'api_url'            => 'https://api.github.com/repos/Mallinanga/nanga-deploy',
-            'channel'            => 'tags',
+            'channel'            => apply_filters('nanga_updater_nanga-deploy_channel', 'tags'),
             'github_url'         => 'https://github.com/Mallinanga/nanga-deploy',
             'plugin_file'        => 'nanga-deploy/nanga-deploy.php',
             'proper_folder_name' => 'nanga-deploy',

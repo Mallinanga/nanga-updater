@@ -102,7 +102,7 @@ class Plugin
                 }
             }
             if ( ! empty($latest)) {
-                set_site_transient($this->config['slug'] . '_latest_tag', $latest, WEEK_IN_SECONDS);
+                set_site_transient($this->config['slug'] . '_latest_tag', $latest, HOUR_IN_SECONDS * 6);
             }
         }
 

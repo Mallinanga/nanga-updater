@@ -11,7 +11,7 @@ class Newsletter extends Plugin
     {
         $this->config = [
             'api_url'            => 'https://api.github.com/repos/Mallinanga/nanga-newsletter',
-            'channel'            => 'tags',
+            'channel'            => apply_filters('nanga_updater_nanga-newsletter_channel', 'tags'),
             'github_url'         => 'https://github.com/Mallinanga/nanga-newsletter',
             'plugin_file'        => 'nanga-newsletter/nanga-newsletter.php',
             'proper_folder_name' => 'nanga-newsletter',

@@ -10,8 +10,8 @@ class PluginUpdater
     public static function init()
     {
         self::$plugins = [
-            //'nanga'             => __NAMESPACE__ . '\Plugins\Nanga',
             'gravityforms'        => __NAMESPACE__ . '\Plugins\GravityForms',
+            'nanga'               => __NAMESPACE__ . '\Plugins\Nanga',
             'nanga-contact'       => __NAMESPACE__ . '\Plugins\Contact',
             'nanga-deploy'        => __NAMESPACE__ . '\Plugins\Deploy',
             'nanga-newsletter'    => __NAMESPACE__ . '\Plugins\Newsletter',
@@ -89,19 +89,6 @@ class PluginUpdater
 
             return $update;
         }, 20, 2);
-        /*
-        if (defined('NANGA_PLAYGROUND') && NANGA_PLAYGROUND) {
-            add_filter('auto_update_plugin', function ($update, $item) {
-
-                return true;
-            }, 20, 2);
-        } else {
-            add_filter('auto_update_plugin', function ($update, $item) {
-
-                return false;
-            }, 20, 2);
-        }
-        */
     }
 
     public static function links($links)
@@ -135,7 +122,7 @@ class PluginUpdater
             'title'  => 'Flush Update Cache',
         ]);
         $wp_admin_bar->add_node([
-            'href'   => wp_nonce_url(add_query_arg('action', 'nanga-updates__flush-transients', admin_url('index.php'))),
+            'href'   => wp_nonce_url(add_query_arg('action', 'nanga-updates__flush-transients', admin_url('plugins.php?plugin_status=upgrade'))),
             'id'     => 'nanga-updates__flush-transients',
             'parent' => 'nanga-updates',
             'title'  => 'Flush Plugin Updater Transients',
@@ -146,14 +133,22 @@ class PluginUpdater
             'parent' => 'nanga-updates',
             'title'  => 'Force Updates',
         ]);
+        $wp_admin_bar->add_node([
+            'href'   => admin_url('options-general.php?page=nanga-settings&tab=updates'),
+            'id'     => 'nanga-updates__settings',
+            'parent' => 'nanga-updates',
+            'title'  => 'Settings',
+        ]);
     }
 
     public static function actions()
     {
+        /*
         global $pagenow;
         if ('index.php' !== $pagenow) {
             return;
         }
+        */
         if (isset($_GET['action']) && 'nanga-updates__flush-cache' === $_GET['action'] && isset($_GET['_wpnonce']) && wp_verify_nonce($_GET['_wpnonce']) && ! doing_action('admin_action_nanga-updates__flush-cache')) {
             add_action('admin_action_nanga-updates__flush-cache', [self::class, 'actionFlushCache']);
         }
@@ -188,33 +183,18 @@ class PluginUpdater
 
     public static function notices()
     {
-        /*
-        if (isset($_GET['action']) && 'nanga-updates__flush-cache' === $_GET['action']) {
-            echo '<div class="notice notice-success is-dismissible"><p>Update cache has been successfully flushed.</p></div>';
-        }
-        */
         if (did_action('admin_action_nanga-updates__flush-cache')) {
             echo '<div class="notice notice-success is-dismissible"><p>Update cache has been successfully flushed.</p></div>';
         }
         if (doing_action('admin_action_nanga-updates__flush-cache')) {
             echo '<div class="notice notice-warning"><p>Update cache is being currently flushed.</p></div>';
         }
-        /*
-        if (isset($_GET['action']) && 'nanga-updates__flush-transients' === $_GET['action']) {
-            // echo '<div class="notice notice-success is-dismissible"><p>Transients of latest tags have been successfully flushed.</p></div>';
-        }
-        */
         if (did_action('admin_action_nanga-updates__flush-transients')) {
             echo '<div class="notice notice-success is-dismissible"><p>Transients of latest tags have been successfully flushed.</p></div>';
         }
         if (doing_action('admin_action_nanga-updates__flush-transients')) {
             echo '<div class="notice notice-warning"><p>Transients of latest tags are being currently flushed.</p></div>';
         }
-        /*
-        if (isset($_GET['action']) && 'nanga-updates__force-autoupdate' === $_GET['action']) {
-            // echo '<div class="notice notice-success is-dismissible"><p>Forcing automatic updates has been triggered successfully.</p></div>';
-        }
-        */
         if (did_action('admin_action_nanga-updates__force-autoupdate')) {
             echo '<div class="notice notice-success is-dismissible"><p>Forcing automatic updates has been triggered successfully.</p></div>';
         }
@@ -229,7 +209,7 @@ class PluginUpdater
         echo '<p>The following plugins are updated via <strong>VG web things Updater</strong> plugin.</p>';
         echo '<ul>';
         foreach (self::$plugins as $pluginName => $pluginClass) {
-            echo '<li>' . $pluginName . '</li>';
+            echo '<li><div>' . $pluginName . '</div><p class="description">[TODO] Upgrade channel radio buttons.</p></li>';
         }
         echo '</ul>';
     }
@@ -245,7 +225,7 @@ class PluginUpdater
 
     public static function deactivate()
     {
-        // delete_site_transient('update_plugins');
+        delete_site_transient('update_plugins');
         foreach (self::$plugins as $pluginName => $pluginClass) {
             delete_site_transient($pluginName . '_github_data');
             delete_site_transient($pluginName . '_latest_tag');

@@ -12,7 +12,7 @@ class GravityForms extends Plugin
         $this->updates();
         $this->config = [
             'api_url'            => 'https://api.github.com/repos/wp-premium/gravityforms',
-            'channel'            => 'tags',
+            'channel'            => apply_filters('nanga_updater_gravityforms_channel', 'tags'),
             'github_url'         => 'https://github.com/wp-premium/gravityforms',
             'plugin_file'        => 'gravityforms/gravityforms.php',
             'proper_folder_name' => 'gravityforms',

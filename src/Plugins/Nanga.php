@@ -11,7 +11,7 @@ class Nanga extends Plugin
     {
         $this->config = [
             'api_url'            => 'https://api.github.com/repos/Mallinanga/nanga',
-            'channel'            => 'releases',
+            'channel'            => apply_filters('nanga_updater_nanga_channel', 'tags'),
             'github_url'         => 'https://github.com/Mallinanga/nanga',
             'plugin_file'        => 'nanga/nanga.php',
             'proper_folder_name' => 'nanga',

@@ -11,7 +11,7 @@ class WooCommerce extends Plugin
     {
         $this->config = [
             'api_url'            => 'https://api.github.com/repos/woocommerce/woocommerce',
-            'channel'            => 'releases',
+            'channel'            => apply_filters('nanga_updater_woocommerce_channel', 'releases'),
             'github_url'         => 'https://github.com/woothemes/woocommerce',
             'plugin_file'        => 'woocommerce/woocommerce.php',
             'proper_folder_name' => 'woocommerce',
