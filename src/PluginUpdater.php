@@ -22,7 +22,7 @@ class PluginUpdater
         ];
         add_action('admin_init', [self::class, 'plugins']);
         add_filter('plugin_action_links_nanga-updater/nanga-updater.php', [self::class, 'links']);
-        add_action('admin_bar_menu', [self::class, 'nodes'], 120);
+        add_action('admin_bar_menu', [self::class, 'nodes'], 110);
         add_action('admin_init', [self::class, 'actions']);
         add_action('admin_notices', [self::class, 'notices']);
         add_action('nanga_settings_tab_content_updates', [self::class, 'settings']);
