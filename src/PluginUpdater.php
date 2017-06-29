@@ -105,15 +105,11 @@ class PluginUpdater
         if ( ! current_user_can('manage_options') || defined('NANGA_EXTERNAL')) {
             return;
         }
+        $counts = wp_get_update_data();
         $wp_admin_bar->add_menu([
+            'href'  => admin_url('update-core.php'),
             'id'    => 'nanga-updates',
-            'title' => 'Updates',
-        ]);
-        $wp_admin_bar->add_node([
-            'href'   => admin_url('plugins.php?plugin_status=upgrade'),
-            'id'     => 'nanga-updates__plugins',
-            'parent' => 'nanga-updates',
-            'title'  => 'Outdated Plugins',
+            'title' => (empty($counts['title'])) ? __('Updates', 'nanga') : $counts['title'],
         ]);
         $wp_admin_bar->add_node([
             'href'   => wp_nonce_url(add_query_arg('action', 'nanga-updates__flush-cache', admin_url('index.php'))),
@@ -125,7 +121,7 @@ class PluginUpdater
             'href'   => wp_nonce_url(add_query_arg('action', 'nanga-updates__flush-transients', admin_url('plugins.php?plugin_status=upgrade'))),
             'id'     => 'nanga-updates__flush-transients',
             'parent' => 'nanga-updates',
-            'title'  => 'Flush Plugin Updater Transients',
+            'title'  => 'Flush Updater Transients',
         ]);
         $wp_admin_bar->add_node([
             'href'   => wp_nonce_url(add_query_arg('action', 'nanga-updates__force-autoupdate', admin_url('index.php'))),
@@ -138,6 +134,34 @@ class PluginUpdater
             'id'     => 'nanga-updates__settings',
             'parent' => 'nanga-updates',
             'title'  => 'Settings',
+        ]);
+        $wp_admin_bar->add_node([
+            'href'   => admin_url('update-core.php'),
+            'id'     => 'nanga-updates__wordpress',
+            'meta'   => ['class' => 'nanga-updates__count'],
+            'parent' => 'nanga-updates',
+            'title'  => 'WordPress Core' . '<span class="count">' . $counts['counts']['wordpress'] . '</span>',
+        ]);
+        $wp_admin_bar->add_node([
+            'href'   => admin_url('update-core.php'),
+            'id'     => 'nanga-updates__translations',
+            'meta'   => ['class' => 'nanga-updates__count'],
+            'parent' => 'nanga-updates',
+            'title'  => 'Translations' . '<span class="count">' . $counts['counts']['translations'] . '</span>',
+        ]);
+        $wp_admin_bar->add_node([
+            'href'   => admin_url('themes.php'),
+            'id'     => 'nanga-updates__themes',
+            'meta'   => ['class' => 'nanga-updates__count'],
+            'parent' => 'nanga-updates',
+            'title'  => 'Themes' . '<span class="count">' . $counts['counts']['themes'] . '</span>',
+        ]);
+        $wp_admin_bar->add_node([
+            'href'   => admin_url('plugins.php?plugin_status=upgrade'),
+            'id'     => 'nanga-updates__plugins',
+            'meta'   => ['class' => 'nanga-updates__count'],
+            'parent' => 'nanga-updates',
+            'title'  => 'Plugins' . '<span class="count">' . $counts['counts']['plugins'] . '</span>',
         ]);
     }
 
