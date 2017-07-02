@@ -9,7 +9,6 @@ class GravityForms extends Plugin
 
     public function __construct()
     {
-        $this->updates();
         $this->config = [
             'api_url'            => 'https://api.github.com/repos/wp-premium/gravityforms',
             'channel'            => apply_filters('nanga_updater_gravityforms_channel', 'tags'),
@@ -20,9 +19,5 @@ class GravityForms extends Plugin
             'zip_url'            => 'https://api.github.com/repos/wp-premium/gravityforms/zipball',
         ];
         parent::__construct();
-    }
-
-    private function updates()
-    {
     }
 }

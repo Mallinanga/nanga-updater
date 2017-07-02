@@ -20,12 +20,24 @@ class PluginUpdater
             'nanga-updater'       => __NAMESPACE__ . '\Plugins\Updater',
             //'woocommerce'       => __NAMESPACE__ . '\Plugins\WooCommerce',
         ];
+        add_action('init', [self::class, 'overrideGF'], 100);
         add_action('admin_init', [self::class, 'plugins']);
         add_filter('plugin_action_links_nanga-updater/nanga-updater.php', [self::class, 'links']);
         add_action('admin_bar_menu', [self::class, 'nodes'], 110);
         add_action('admin_init', [self::class, 'actions']);
         add_action('admin_notices', [self::class, 'notices']);
         add_action('nanga_settings_tab_content_updates', [self::class, 'settings']);
+    }
+
+    public static function overrideGF()
+    {
+        remove_action('after_plugin_row_gravityforms/gravityforms.php', ['GFAutoUpgrade', 'rg_plugin_row']);
+        remove_action('after_plugin_row_gravityforms/gravityforms.php', ['GFForms', 'plugin_row'], 10);
+        remove_action('install_plugins_pre_plugin-information', ['GFForms', 'display_changelog'], 9);
+        remove_filter('auto_update_plugin', ['GFForms', 'maybe_auto_update'], 10, 2);
+        remove_filter('plugins_api', ['GFForms', 'get_addon_info'], 100, 3);
+        remove_filter('site_transient_update_plugins', ['GFForms', 'check_update']);
+        remove_filter('transient_update_plugins', ['GFForms', 'check_update']);
     }
 
     public static function plugins()
@@ -46,17 +58,14 @@ class PluginUpdater
         }
         add_filter('auto_core_update_send_email', '__return_false');
         add_filter('automatic_updates_send_debug_email', '__return_false');
+        /*
         add_filter('auto_core_update_email', function ($email) {
             $email['to'] = get_option('admin_email');
 
             return $email;
         }, 1);
-        add_filter('auto_update_theme', function ($update, $item) {
-            error_log(print_r($update, true));
-            error_log(print_r($item, true));
-
-            return $update;
-        }, 20, 2);
+        */
+        add_filter('auto_update_theme', '__return_false', 20, 2);
         add_filter('auto_update_plugin', function ($update, $item) {
             $allowed    = apply_filters('nanga_updater_auto_allowed_plugins', [
                 'acf-gallery',
@@ -68,24 +77,21 @@ class PluginUpdater
                 'codepress-admin-columns',
                 'gravityforms',
                 'imsanity',
-                'jigsaw',
                 'post-types-order',
-                'user-role-editor',
                 'wordpress-seo',
             ]);
             $disallowed = apply_filters('nanga_updater_auto_disallowed_plugins', [
                 'nanga',
             ]);
-            /*
+            $allowed    = [
+                'nanga-plugin-test',
+            ];
             if (in_array($item->slug, $allowed)) {
                 return true;
             }
             if (in_array($item->slug, $disallowed)) {
                 return false;
             }
-            */
-            error_log(print_r($update, true));
-            error_log(print_r($item, true));
 
             return $update;
         }, 20, 2);
