@@ -1,0 +1,27 @@
+#wp-admin-bar-nanga-updates > .ab-item:before {
+    content: '\f463';
+    top: 2px;
+}
+
+#wpadminbar ul li#wp-admin-bar-nanga-updates__settings {
+    padding-bottom: 10px;
+}
+
+#wpadminbar ul li.nanga-updates__count {
+    background-color: #f1f1f1;
+    border-top: 1px solid #e1e1e1;
+}
+
+#wpadminbar .quicklinks .menupop ul li.nanga-updates__count .ab-item {
+    color: #000;
+    height: 32px;
+    line-height: 32px;
+    min-width: 0;
+    white-space: normal;
+}
+
+#wpadminbar .quicklinks .menupop ul li.nanga-updates__count .ab-item .count {
+    color: #0098ed;
+    float: right;
+    font-weight: bold;
+}

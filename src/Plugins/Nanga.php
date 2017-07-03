@@ -19,5 +19,13 @@ class Nanga extends Plugin
             'zip_url'            => 'https://api.github.com/repos/Mallinanga/nanga/zipball',
         ];
         parent::__construct();
+        add_action('after_plugin_row_nanga/nanga.php', [$this, 'warning'], 10, 3);
+    }
+
+    public function warning($file, $data, $status)
+    {
+        if (version_compare($data['Version'], '2.0.0', '<')) {
+            echo '</tr><tr class="plugin-update-tr active"><td colspan="5" class="plugin-update" style="box-shadow:none;"><div class="update-message notice inline notice-error notice-alt" style="margin-top:15px;"><p>Versions above <em>2.0.0</em> include major changes. Please make sure you understand all the implications before upgrading this plugin.</p></div></td>';
+        }
     }
 }

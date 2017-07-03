@@ -22,33 +22,12 @@ class PluginUpdater
         ];
         add_action('init', [self::class, 'overrideGF'], 100);
         add_action('admin_init', [self::class, 'plugins']);
-        add_filter('plugin_action_links_nanga-updater/nanga-updater.php', [self::class, 'links']);
-        add_action('admin_bar_menu', [self::class, 'nodes'], 110);
+        add_action('admin_enqueue_scripts', [self::class, 'assets'], 100);
+        add_action('admin_bar_menu', [self::class, 'nodes'], 1000);
         add_action('admin_init', [self::class, 'actions']);
         add_action('admin_notices', [self::class, 'notices']);
         add_action('nanga_settings_tab_content_updates', [self::class, 'settings']);
-    }
-
-    public static function overrideGF()
-    {
-        remove_action('after_plugin_row_gravityforms/gravityforms.php', ['GFAutoUpgrade', 'rg_plugin_row']);
-        remove_action('after_plugin_row_gravityforms/gravityforms.php', ['GFForms', 'plugin_row'], 10);
-        remove_action('install_plugins_pre_plugin-information', ['GFForms', 'display_changelog'], 9);
-        remove_filter('auto_update_plugin', ['GFForms', 'maybe_auto_update'], 10, 2);
-        remove_filter('plugins_api', ['GFForms', 'get_addon_info'], 100, 3);
-        remove_filter('site_transient_update_plugins', ['GFForms', 'check_update']);
-        remove_filter('transient_update_plugins', ['GFForms', 'check_update']);
-    }
-
-    public static function plugins()
-    {
-        $plugins = apply_filters('nanga_updater_exclude_plugins', self::$plugins);
-        foreach ($plugins as $pluginName => $pluginClass) {
-            if ( ! class_exists($pluginClass)) {
-                continue;
-            }
-            new $pluginClass();
-        }
+        add_filter('plugin_action_links_nanga-updater/nanga-updater.php', [self::class, 'links']);
     }
 
     public static function auto()
@@ -95,6 +74,33 @@ class PluginUpdater
 
             return $update;
         }, 20, 2);
+    }
+
+    public static function overrideGF()
+    {
+        remove_action('after_plugin_row_gravityforms/gravityforms.php', ['GFAutoUpgrade', 'rg_plugin_row']);
+        remove_action('after_plugin_row_gravityforms/gravityforms.php', ['GFForms', 'plugin_row'], 10);
+        remove_action('install_plugins_pre_plugin-information', ['GFForms', 'display_changelog'], 9);
+        remove_filter('auto_update_plugin', ['GFForms', 'maybe_auto_update'], 10, 2);
+        remove_filter('plugins_api', ['GFForms', 'get_addon_info'], 100, 3);
+        remove_filter('site_transient_update_plugins', ['GFForms', 'check_update']);
+        remove_filter('transient_update_plugins', ['GFForms', 'check_update']);
+    }
+
+    public static function plugins()
+    {
+        $plugins = apply_filters('nanga_updater_exclude_plugins', self::$plugins);
+        foreach ($plugins as $pluginName => $pluginClass) {
+            if ( ! class_exists($pluginClass)) {
+                continue;
+            }
+            new $pluginClass();
+        }
+    }
+
+    public static function assets($screen)
+    {
+        wp_enqueue_style('nanga-updater', NANGA_UPDATER_DIR_URL . 'assets/css/nanga-updater.css', [], NANGA_UPDATER_VERSION, 'all');
     }
 
     public static function links($links)
