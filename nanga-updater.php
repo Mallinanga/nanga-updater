@@ -6,8 +6,10 @@
  * Plugin Name: VG web things Updater
  * Version: 1.4.1
  */
-
 defined('WPINC') || die;
+if (class_exists('Nanga\PluginUpdater')) {
+    return;
+}
 define('NANGA_UPDATER_VERSION', '1.4.1');
 if (defined('NANGA_VIP_URL')) {
     define('NANGA_UPDATER_DIR_URL', NANGA_VIP_URL . 'plugins/nanga-updater/');

@@ -25,7 +25,10 @@ class Nanga extends Plugin
     public function warning($file, $data, $status)
     {
         if (version_compare($data['Version'], '2.0.0', '<')) {
-            echo '</tr><tr class="plugin-update-tr active"><td colspan="5" class="plugin-update" style="box-shadow:none;"><div class="update-message notice inline notice-error notice-alt" style="margin-top:15px;"><p>Versions above <em>2.0.0</em> include major changes. Please make sure you understand all the implications before upgrading this plugin.</p></div></td>';
+            echo '</tr><tr class="plugin-update-tr active"><td colspan="5" class="plugin-update" style="box-shadow:none;"><div class="update-message notice inline notice-error notice-alt" style="margin-top:15px;">';
+            echo '<p>Versions above <em>2.0.0</em> include major changes. Please make sure you understand all the implications before upgrading this plugin.</p>';
+            echo '<p>If you decide to upgrade the plugin, please do it on the <a href="' . admin_url('plugins.php?plugin_status=upgrade') . '">plugins page</a>.</p>';
+            echo '</div></td>';
         }
     }
 }
